@@ -3,3 +3,7 @@ node_modules
 .env
 scrape_dataset
 archive_items.*
+backend/.env
+
+backend/node_modules
+mdbstore/node_modules

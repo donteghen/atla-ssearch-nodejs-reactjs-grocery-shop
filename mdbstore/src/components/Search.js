@@ -19,6 +19,7 @@ export default function Search(props) {
 
   const handleKeyUp = async (e) => {
     e.preventDefault();
+    console.log(query)
     let result = await fetch(`${config.BASE_URL}/autocomplete/${query}`).then(r => r.json());
     setSuggestions(result);
   }

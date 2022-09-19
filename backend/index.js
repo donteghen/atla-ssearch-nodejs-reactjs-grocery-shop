@@ -18,7 +18,7 @@ const getMongoDB = async () => {
     const client = await MongoClient.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
     db = await client.db("grocery");
     dbConnected = true;  
-    console.log("Database is connected and ready to go!");
+    console.log("Database is ready!");
   } catch (e) {
     console.log(e.toString());
   }
@@ -54,7 +54,19 @@ app.get("/search/:query", async (req, res) => {
   let results = [];
   try {
     /** TODO: Update this to use Atlas Search */
-    results = await itemCollection.find({name: req.params.query}).toArray();
+    results = await itemCollection.aggregate([
+      {
+         $search: {
+          index: 'default',
+          text: {
+            query: req.params.query,
+            path: ["name", "brand", "category", "tags"],
+            fuzzy: {}
+          }
+        }
+      }
+      
+    ]).toArray();
     /** End */
   }
   catch(e) {
@@ -67,9 +79,39 @@ app.get("/autocomplete/:query", async (req, res) => {
   log("/autocomplete", `GET request with param ${req.params.query}`);
   let results = [];
   try {
-    // TODO: Insert the functionality here
-    
-    /** End */
+    results = await itemCollection.aggregate([
+      {
+        $search: {
+          index: 'autocomplate', 
+          autocomplete: {
+            'query': "chic", 
+            'path': 'name'
+          }, 
+          highlight: {
+            'path': [
+              'name'
+            ]
+          },
+          fuzzy: {}
+        }
+      },
+        {$limit: 5,},
+        {
+          $project: {
+          name: 1, 
+          highlights: {
+            $meta: 'searchHighlights'
+          }
+        }
+      },
+        {
+          $sort: {
+          highlights: -1
+        }
+      }
+      
+    ]).toArray()
+
   }
   catch(e) {
     log("/search", e.toString());
